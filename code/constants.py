@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 try:
-    lab_machine_env = Path(os.environ["QARM_LAB_ENV"])
+    lab_machine_env = Path("C:\\Users\\Tracy\\Documents\\lab-machine-env")
 except KeyError as error:
     raise RuntimeError(
         "QARM_LAB_ENV is not configured on this computer."

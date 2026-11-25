@@ -124,7 +124,13 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         # np.random.random() and np.random.uniform(low, high) will help here.
         probability = np.random.random()
         die_outcome = round(np.random.uniform(0.5, 6.5))
-        pass
+
+        if probability < bias:
+            return goal_phi
+
+        else:
+            return np.array([np.random.uniform(joint_limits[0][i], joint_limits[1][i]) for i in range(4)])
+
         # == end student section ==
 
     # --------------------------------------------------------------------------
@@ -151,7 +157,13 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         # == start student section ==
         # Move step_size radians from q_near toward q_rand
         # hint: use np.linalg.norm(v)
-        pass
+
+        v = q_rand - q_near
+        v_norm = np.linalg.norm(v)
+        next_step = q_near + (v / v_norm) * step_size
+
+        return next_step
+        # pass
         # == end student section ==
 
     # --------------------------------------------------------------------------
@@ -170,7 +182,8 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         path = []
         while node_idx is not None:
             # TODO: add this node's configuration to path, then move to its parent
-            pass
+            path.append(tree.get_node_config(node_idx))
+            node_idx = tree.get_node_parent(node_idx)
         return path
         # == end student section ==
 
@@ -190,7 +203,25 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         # take a small step toward the sample, and add the new configuration to the tree if it
         # is collision-free. If you added it and it is within success_threshold of destination_phi,
         # set path_found = True and stop the loop with break.
-        pass
+
+        #generate a random point
+        q_rand = rand_point(destination_phi)
+        q_near, nearest_idx = tree.get_nearest_neighbor(q_rand)
+
+        q_new = small_step(q_near, q_rand, step_size)
+
+        # obtain end-effector position, the last column
+        q_pos = helpers.get_joint_positions(q_new)[4]
+        print(q_new, q_pos)
+
+        # checks for collision
+        if helpers.check_pose(q_new, q_pos, "q_new"):
+            tree.add_node(q_new, nearest_idx)
+
+            if np.linalg.norm(q_new - destination_phi) < success_threshold:
+                path_found = True
+                break
+
         # == end student section ==
 
     # --------------------------------------------------------------------------
