@@ -35,7 +35,7 @@ def geometric_inv_kin(p: np.ndarray, wrist: float, phi_prev: np.ndarray):
 
     # Joint limits in radians, in order [base, shoulder, elbow, wrist] (Lab 2 PDF, joint limits table)
     JOINT_MIN = np.radians([-170, -85, -95, -160])
-    JOINT_MAX = None  # TODO: the maximum joint angles
+    JOINT_MAX = np.radians([170, 85, 95, 160])  # TODO: the maximum joint angles
 
     # Initialization
     theta   = np.zeros((4, 4), dtype=np.float64)
@@ -73,8 +73,7 @@ def geometric_inv_kin(p: np.ndarray, wrist: float, phi_prev: np.ndarray):
     # Out of reach: the square roots below would be of a negative number
     if C**2 - F**2 < 0:
         print("geometric_inv_kin: target is out of reach")
-        # TODO: return the appropriate result for both outputs
-        pass
+        return "Fail", "Fail"
 
     # ==  end student section  ==
 
@@ -124,7 +123,24 @@ def geometric_inv_kin(p: np.ndarray, wrist: float, phi_prev: np.ndarray):
     # compare the sides separately and combine the results
 
     # Placeholder: Sets phi_best to the first column of phi_candidates
-    phi_best = phi_candidates[:, 0]
+    print("phi_candidates:", phi_candidates)
+    print("phi_candidates shape:", phi_candidates.shape)
+    row, column = phi_candidates.shape
+
+    if row != 4 or column != 4:
+        print("Error: phi_candidates should have 4 rows and 4 columns, but has", row, "rows and", column, "columns")
+        return "Fail", "Fail"
+
+    lowest_error = 0
+    answer = "Fail"
+    for i in range (column):
+        if np.all(phi_candidates[:, i] >= JOINT_MIN) and np.all(phi_candidates[:, i] <= JOINT_MAX):
+            error = np.linalg.norm(phi_candidates[:, i] - phi_prev)
+            if lowest_error == 0 or error < lowest_error:
+                lowest_error = error
+                answer = phi_candidates[:, i]
+
+    phi_best = answer
 
     # ==  end student section  ==
 

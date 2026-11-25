@@ -57,6 +57,43 @@ def numeric_inv_kin(p: np.ndarray, wrist: float, phi_prev: np.ndarray):
 
     # tip: use the three helpers above
 
+    if not num_ik_helper.check_joint_limits([*phi_new[:3], wrist]):
+        return "Fail"
+
+    attempt = 0
+    
+    while True:
+
+        # find current position and error
+        pos_curr, _ = num_ik_helper.forward_kinematics(phi_new)
+        error = p - pos_curr
+        error = np.append(error, wrist - phi_new[3])
+        # print("error:", error, error.shape)
+
+        # check if error is below threshold
+        if np.linalg.norm(error) < success_thresh:
+            break
+
+        # inverse Jacobian
+        J_inv = num_ik_helper.Inv_Jacobian(phi_new)
+        # print("J_inv:", J_inv, J_inv.shape)
+
+        # update phi_new
+        phi_new = phi_new + step_size_scaling * J_inv @ error
+
+
+        # check joint limits
+        if not num_ik_helper.check_joint_limits(phi_new):
+            phi_new = "Fail"
+            break
+
+        attempt += 1
+        if attempt > attempt_limit:
+            phi_new = "Fail"
+            break
+
+
+
     # ==  end student section  ==
 
     return phi_new
