@@ -241,7 +241,7 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
     print(f"Path found! {len(path)} tree nodes")
 
     # Straighten the path. Uncomment to remove the wiggle
-    # path = helpers.shortcut_path(path, step_size)
+    path = helpers.shortcut_path(path, step_size)
     
     # 3D plot of the plan. Close the window to run it on the arm
     helpers.plot_path(path)
