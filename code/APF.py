@@ -52,7 +52,7 @@ else:
         Cylinder_Obstacle(np.array([0.45, -0.05, TABLE_Z0]), np.array([0.45, -0.05, TABLE_Z0 + 0.075]), 0.056),
         Cylinder_Obstacle(np.array([0.45, 0.05, TABLE_Z0]), np.array([0.45, 0.05, TABLE_Z0 + 0.075]), 0.056),
     ])
-    start_pos = np.array([0.375, 0.0, 0.03])
+    start_pos = np.array([0.2, 0.0, 0.03])
     end_pos = np.array([0.71, 0.01, 0.03])
 
 # Wrist angle for the exercise. Puts the gripper's motor and cable on top,
