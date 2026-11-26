@@ -30,7 +30,7 @@ from QArm_functions import QArm_Lab_interface #type: ignore
 # == Obstacle Setup ==
 
 # Choose the obstacle setup: 1 or 2 (see the Obstacle Setup figures in the Lab 2 PDF)
-SETUP = 1
+SETUP = 2
 
 # Heights (z) are measured with respect to the bottom of the arm's base, which sits on a plate 11mm
 # above the cardboard playspace, or "table" for short. Thus the table is at z = TABLE_Z0.
@@ -43,8 +43,8 @@ if SETUP == 1:
     obstacles = np.array([
         Cylinder_Obstacle(np.array([0.65, 0.0, TABLE_Z0]), np.array([0.65, 0.0, TABLE_Z0 + 0.310]), 0.25),
     ])
-    start_pos = np.array([0.5, -0.375, 0.05])
-    end_pos = np.array([0.5, 0.375, 0.05])
+    start_pos = np.array([0.5, 0.0, 0.05])
+    end_pos = np.array([0.5, 0.0, 0.05])
 else:
     # Two short pillars (75 mm tall, 104 mm wide octagons) overlapping, forming a barrier
     # between the start and the end
@@ -52,8 +52,8 @@ else:
         Cylinder_Obstacle(np.array([0.45, -0.05, TABLE_Z0]), np.array([0.45, -0.05, TABLE_Z0 + 0.075]), 0.056),
         Cylinder_Obstacle(np.array([0.45, 0.05, TABLE_Z0]), np.array([0.45, 0.05, TABLE_Z0 + 0.075]), 0.056),
     ])
-    start_pos = np.array([0.375, -0.2, 0.03])
-    end_pos = np.array([0.6, 0.15, 0.03])
+    start_pos = np.array([0.375, 0.0, 0.03])
+    end_pos = np.array([0.71, 0.01, 0.03])
 
 # Wrist angle for the exercise. Puts the gripper's motor and cable on top,
 # to keep clear of obstacles.
@@ -100,7 +100,7 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
     alpha = 0.01
     success_threshold = 0.005
     approx_update_freq = 8 # in hz
-    max_steps = 600 # stop after this many steps (75 s at 8 Hz) if the goal isn't reached
+    max_steps = 1000 # stop after this many steps (75 s at 8 Hz) if the goal isn't reached
     # --------------------------------------------------------------------------
     # TODO 1: Repulsive force
     # --------------------------------------------------------------------------
@@ -126,7 +126,13 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
             The repulsive force.
         """
         # == start student section ==
-        return np.array([0.0, 0.0, 0.0])
+
+        if rho > rho_0:
+            return np.array([0.0, 0.0, 0.0])
+
+        const = (1/rho - 1/rho_0) / rho**2
+        return eta * const * u_hat
+
         # ==  end student section  ==
 
     # --------------------------------------------------------------------------
@@ -154,7 +160,11 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
             The attractive force.
         """
         # == start student section ==
-        return np.array([0.0, 0.0, 0.0])
+
+        if d > d_0:
+            return zeta * d_0 * u_goal
+
+        return zeta * d * u_goal 
         # ==  end student section  ==
 
     # Distance and direction from the end effector to the destination, stored as a dict
@@ -193,13 +203,15 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         for obstacle in obstacle_vecs:
             dist = obstacle["distance"]
             direction = obstacle["direction"]
-            # TODO: add this obstacle's repulsive force to f
+            f += repulsive_f(dist, direction, eta, rho_0)
 
         # TODO: add the attractive force toward the destination (destination_vec has the same keys)
+        f += attractive_f(destination_vec["distance"], destination_vec["direction"], zeta, d_0)
 
         # TODO: limit the length of f to max_length
-        # hint: use np.linalg.norm(v)
 
+        length = np.linalg.norm(f)
+        f = min(length, max_length) * f
         # ==  end student section  ==
         return f
 
@@ -217,6 +229,11 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         # TODO: update destination_vec["distance"] and destination_vec["direction"] for the current p4
         
 
+        destination_vec = {
+                "distance": np.linalg.norm(end_pos - p4),
+                "direction": (end_pos - p4) / np.linalg.norm(end_pos - p4)
+            }
+
         # ==  end student section  ==
 
         if destination_vec["distance"] < success_threshold:
@@ -226,6 +243,12 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         # TODO: find the total force f with find_forces(), turn it into a joint step using
         # QArm_Interface.Inv_Jacobian(q), and add the step to q.
         # hint: use np.append()
+
+        inv_J = QArm_Interface.Inv_Jacobian(q)
+
+        force = find_forces(obstacle_vecs, destination_vec, alpha)
+        force = np.append(force, 0)
+        q = q + inv_J @ force
 
         # ==  end student section  ==
 
