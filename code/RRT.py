@@ -181,9 +181,8 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         # == start student section ==
         path = []
         while node_idx is not None:
-            # TODO: add this node's configuration to path, then move to its parent
-            path.append(tree.get_node_config(node_idx))
-            node_idx = tree.get_node_parent(node_idx)
+            path.append(tree.nodes[node_idx])
+            node_idx = tree.parents[node_idx]
         return path
         # == end student section ==
 
@@ -215,7 +214,7 @@ with QArm(hardware=int(mode), readMode=0) as myArm:
         print(q_new, q_pos)
 
         # checks for collision
-        if helpers.check_pose(q_new, q_pos, "q_new"):
+        if not helpers.is_configuration_colliding(q_new):
             tree.add_node(q_new, nearest_idx)
 
             if np.linalg.norm(q_new - destination_phi) < success_threshold:
